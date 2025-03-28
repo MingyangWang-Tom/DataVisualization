@@ -1,7 +1,7 @@
 // Select the SVG and set up zoom/pan
 const svg = d3.select("#spiralViz")
-    .attr("width", 800)
-    .attr("height", 800)
+    .attr("width", 600)
+    .attr("height", 600)
     .call(d3.zoom().on("zoom", (event) => {
         svg.selectAll("g.spiralLayer").attr("transform", event.transform);
     }));
@@ -12,10 +12,13 @@ const height = +svg.attr("height");
 const centerX = width / 2;
 const centerY = height / 2;
 
+// How many total "turns" you want in the spiral
 const totalRevolutions = 3;
 
+// Controls how quickly radius grows with angle (the 'b' in r(θ)=a+bθ)
 const spiralGrowth = 5;
 
+// Create a group that will hold the spiral arcs
 const spiralLayer = svg.append("g")
     .attr("class", "spiralLayer");
 
@@ -25,23 +28,21 @@ const tooltip = d3.select("body")
     .attr("class", "tooltip");
 
 /**
- * This function returns a path string for a "spiral ring segment"
- * spanning angles [startAngle, endAngle], with the *inner* edge
- * on the spiral r(θ) = a + bθ and a constant thickness.
- *
- * @param {number} a - base radius (set to 0 for a spiral starting at center)
+ * Creates a path string for a spiral ring segment spanning angles
+ * [startAngle, endAngle] where the inner edge follows the spiral r(θ)=a+bθ.
+ * @param {number} a - base radius (set to 0 for a spiral starting at the center)
  * @param {number} b - spiral growth rate
- * @param {number} startAngle - beginning of the segment (radians)
- * @param {number} endAngle - end of the segment (radians)
- * @param {number} thickness - thickness of the ring
+ * @param {number} startAngle - starting angle (in radians)
+ * @param {number} endAngle - ending angle (in radians)
+ * @param {number} thickness - thickness of the ring segment
  * @param {number} steps - number of points to sample along the arc
- * @returns {string} - SVG path data
+ * @returns {string} - SVG path data string
  */
 function createSpiralSegment(a, b, startAngle, endAngle, thickness, steps = 20) {
     const insidePoints = [];
     const outsidePoints = [];
 
-    // Sample from startAngle to endAngle for the inner edge
+    // Sample along the inner edge of the spiral
     for (let i = 0; i <= steps; i++) {
         const t = i / steps;
         const angle = startAngle + (endAngle - startAngle) * t;
@@ -49,7 +50,7 @@ function createSpiralSegment(a, b, startAngle, endAngle, thickness, steps = 20) 
         insidePoints.push([r * Math.cos(angle), r * Math.sin(angle)]);
     }
 
-    // Sample from endAngle back to startAngle for the outer edge
+    // Sample along the outer edge (inner edge plus thickness)
     for (let i = steps; i >= 0; i--) {
         const t = i / steps;
         const angle = startAngle + (endAngle - startAngle) * t;
@@ -57,59 +58,55 @@ function createSpiralSegment(a, b, startAngle, endAngle, thickness, steps = 20) 
         outsidePoints.push([r * Math.cos(angle), r * Math.sin(angle)]);
     }
 
-    // Combine inside + outside to form a closed polygon
     const allPoints = insidePoints.concat(outsidePoints);
 
-    // Use d3.line() to generate the path string
     return d3.line()
         .curve(d3.curveLinearClosed)(allPoints);
 }
 
+/**
+ * Draws the spiral visualization using data.
+ */
 function drawSpiral(data) {
-    // Clear any existing arcs
+    // Clear existing arcs
     spiralLayer.selectAll("path.arc").remove();
 
-    // Color scale for Stress [0..10]
+    // Remove any old legend (if applicable)
+    svg.selectAll("g.legend").remove();
+    svg.selectAll("defs#legendGradient").remove();
+
+    // Define color scale for stress [0..10]
     const colorScale = d3.scaleLinear()
         .domain([0, 10])
         .range(["green", "red"]);
 
+    // Add the color legend (if you have a legend function defined)
+    addColorLegend();
+
+    // Total angle for spiral (in radians)
     const totalAngle = 2 * Math.PI * totalRevolutions;
     const angleStep = totalAngle / data.length;
 
-    addColorLegend();
-
+    // Map sleep duration [0..12] to thickness (you can adjust the range to emphasize differences)
     const thicknessScale = d3.scalePow()
         .exponent(0.5)
         .domain([0, 12])
-        .range([2, 20]);
+        .range([2, 30]);
 
     data.forEach((d, i) => {
         const startAngle = i * angleStep;
         const endAngle = (i + 1) * angleStep;
-
-        // Arc thickness depends on the data (sleep duration)
         const thickness = thicknessScale(d.sleep);
 
-        // Create a path for the spiral ring
-        const pathData = createSpiralSegment(
-            0,
-            spiralGrowth,
-            startAngle,
-            endAngle,
-            thickness,
-            20
-        );
+        const pathData = createSpiralSegment(0, spiralGrowth, startAngle, endAngle, thickness, 20);
 
-        // Append the spiral ring
         spiralLayer.append("path")
             .attr("class", "arc")
             .attr("transform", `translate(${centerX}, ${centerY})`)
             .attr("d", pathData)
             .attr("fill", colorScale(d.stress))
             .on("mouseover", function () {
-                tooltip
-                    .style("display", "block")
+                tooltip.style("display", "block")
                     .html(`
             <strong>Day:</strong> ${d.day}<br>
             <strong>Sleep Duration:</strong> ${d.sleep}h<br>
@@ -131,10 +128,84 @@ function drawSpiral(data) {
     });
 }
 
-//Populate the Person ID dropdown from unique IDs in the data.
+/**
+ * Adds a horizontal color legend (for stress 0..10) at the bottom-left corner.
+ */
+function addColorLegend() {
+    svg.selectAll("g.legend").remove();
+    svg.selectAll("defs#legendGradient").remove();
+
+    const legendX = 50;
+    const legendY = 50;
+    const legendWidth = 120;
+    const legendHeight = 10;
+    const legendMargin = 5;
+
+    const defs = svg.append("defs");
+    const linearGradient = defs.append("linearGradient")
+        .attr("id", "legendGradient")
+        .attr("x1", "0%")
+        .attr("y1", "0%")
+        .attr("x2", "100%")
+        .attr("y2", "0%");
+
+    linearGradient.append("stop")
+        .attr("offset", "0%")
+        .attr("stop-color", "green");
+
+    linearGradient.append("stop")
+        .attr("offset", "100%")
+        .attr("stop-color", "red");
+
+    const legendG = svg.append("g")
+        .attr("class", "legend")
+        .attr("transform", `translate(${legendX}, ${legendY})`);
+
+    legendG.append("rect")
+        .attr("width", legendWidth)
+        .attr("height", legendHeight)
+        .style("fill", "url(#legendGradient)");
+
+    const legendScale = d3.scaleLinear()
+        .domain([0, 10])
+        .range([0, legendWidth]);
+
+    const legendAxis = d3.axisBottom(legendScale)
+        .ticks(5);
+
+    legendG.append("g")
+        .attr("transform", `translate(0, ${legendHeight})`)
+        .call(legendAxis);
+
+    legendG.append("text")
+        .attr("x", 0)
+        .attr("y", -legendMargin)
+        .style("font-size", "12px")
+        .text("Stress Level");
+}
+
+/**
+ * Updates the general information panel with details about the selected person.
+ * Assumes that all records for the same person share the same general info.
+ * @param {Array} personData - Array of records for the selected person.
+ */
+function updatePersonInfo(personData) {
+    if (personData.length > 0) {
+        const info = personData[0];
+        const infoHTML =
+            `<p><strong>Age:</strong> ${info.age} | <strong>Occupation:</strong> ${info.occupation} | <strong>Gender:</strong> ${info.gender}</p>`;
+        document.getElementById("personInfo").innerHTML = infoHTML;
+    } else {
+        document.getElementById("personInfo").innerHTML = "";
+    }
+}
+
+/**
+ * Populates the Person ID dropdown from unique IDs in the data.
+ */
 function populateDropdown(ids) {
     const dropdown = document.getElementById("personFilter");
-    dropdown.innerHTML = ""; // Clear if needed
+    dropdown.innerHTML = ""; // Clear existing options
 
     ids.forEach(id => {
         const option = document.createElement("option");
@@ -144,7 +215,7 @@ function populateDropdown(ids) {
     });
 }
 
-// Load CSV data, parse, and initialize the chart
+// Load CSV data, parse, and initialize the visualization
 d3.csv("data.csv").then(data => {
     const parsedData = data.map(d => ({
         person: d["Person ID"],
@@ -154,7 +225,11 @@ d3.csv("data.csv").then(data => {
         stress: +d["Stress Level"],
         activity: +d["Physical Activity Level"],
         steps: +d["Daily Steps"],
-        disorder: d["Sleep Disorder"]
+        disorder: d["Sleep Disorder"],
+        // Additional general info fields:
+        age: d["Age"],
+        occupation: d["Occupation"],
+        gender: d["Gender"]
     }));
 
     // Get unique Person IDs
@@ -163,76 +238,16 @@ d3.csv("data.csv").then(data => {
     // Populate the dropdown
     populateDropdown(personIDs);
 
-    // Draw the spiral for the first person by default
-    drawSpiral(parsedData.filter(d => d.person === personIDs[0]));
+    // Draw the spiral and update info for the first person by default
+    let firstPersonData = parsedData.filter(d => d.person === personIDs[0]);
+    drawSpiral(firstPersonData);
+    updatePersonInfo(firstPersonData);
 
-    // Redraw spiral whenever a different person is selected
-    document.getElementById("personFilter")
-        .addEventListener("change", function () {
-            const selected = this.value;
-            const personData = parsedData.filter(d => d.person === selected);
-            drawSpiral(personData);
-        });
+    // Redraw spiral and update general info whenever a different person is selected
+    document.getElementById("personFilter").addEventListener("change", function () {
+        const selected = this.value;
+        const personData = parsedData.filter(d => d.person === selected);
+        drawSpiral(personData);
+        updatePersonInfo(personData);
+    });
 });
-
-
-// Adds a color legend 
-function addColorLegend() {
-    // Clear any existing legend
-    svg.selectAll("g.legend").remove();
-    svg.selectAll("defs#legendGradient").remove();
-
-    // Dimensions and positioning
-    const legendX = 50;
-    const legendY = 50;
-    const legendWidth = 120;
-    const legendHeight = 10;
-    const legendMargin = 5;
-
-    const defs = svg.append("defs");
-
-    const linearGradient = defs.append("linearGradient")
-        .attr("id", "legendGradient")
-        .attr("x1", "0%").attr("y1", "0%")
-        .attr("x2", "100%").attr("y2", "0%");
-
-    // Two color stops: green at 0%, red at 100%
-    linearGradient.append("stop")
-        .attr("offset", "0%")
-        .attr("stop-color", "green");
-    linearGradient.append("stop")
-        .attr("offset", "100%")
-        .attr("stop-color", "red");
-
-    const legendG = svg.append("g")
-        .attr("class", "legend")
-        .attr("transform", `translate(${legendX}, ${legendY})`);
-
-    //Draw a rect filled by the gradient
-    legendG.append("rect")
-        .attr("width", legendWidth)
-        .attr("height", legendHeight)
-        .style("fill", "url(#legendGradient)");
-
-    //Create a scale
-    const legendScale = d3.scaleLinear()
-        .domain([0, 10])
-        .range([0, legendWidth]);
-
-    //Create a bottom axis
-    const legendAxis = d3.axisBottom(legendScale)
-        .ticks(5);
-
-    //Position the axis just below the gradient rect
-    legendG.append("g")
-        .attr("transform", `translate(0, ${legendHeight})`)
-        .call(legendAxis);
-
-    // label
-    legendG.append("text")
-        .attr("x", 0)
-        .attr("y", -legendMargin)
-        .style("font-size", "12px")
-        .text("Stress Level");
-}
-
