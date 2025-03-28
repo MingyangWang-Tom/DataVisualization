@@ -1,40 +1,77 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    background-color: #f9f9f9;
-    color: #333;
+  font-family: Arial, sans-serif;
+  background: #f5f5f5;
+  color: #333;
+  line-height: 1.6;
 }
 
-h1 {
-    text-align: center;
-    margin-bottom: 20px;
+header {
+  background: #444;
+  color: #fff;
+  padding: 20px;
+  text-align: center;
 }
 
-#filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
-    margin-bottom: 20px;
+header h1 {
+  margin-bottom: 10px;
 }
 
-#filters label {
-    display: flex;
-    flex-direction: column;
-    font-size: 14px;
+main {
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 0 20px;
 }
 
-#filters input,
-#filters select,
-#filters button {
-    padding: 4px 6px;
-    font-size: 14px;
+.controls {
+  margin-bottom: 20px;
+  text-align: center;
 }
 
-svg {
-    display: block;
-    margin: 0 auto;
-    background-color: white;
-    border: 1px solid #ccc;
-    border-radius: 10px;
+.controls label {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.controls select {
+  padding: 5px 10px;
+  font-size: 16px;
+}
+
+.chart-container {
+  background: #fff;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+#spiralViz {
+  display: block;
+  width: 100%;
+  height: 800px;
+}
+
+.tooltip {
+  position: absolute;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  pointer-events: none;
+  font-size: 12px;
+  display: none;
+}
+
+footer {
+  text-align: center;
+  margin-top: 30px;
+  padding: 15px;
+  background: #eee;
+  font-size: 14px;
 }

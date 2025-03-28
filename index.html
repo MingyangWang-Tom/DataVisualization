@@ -1,42 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Spiral Sleep Visualization</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://d3js.org/d3.v7.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spiral Chart Visualization</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
-<h1>Spiral Sleep Visualization</h1>
+  <header>
+    <h1>Spiral Chart Visualization</h1>
+    <p>Visualizing sleep and stress data using a continuous spiral</p>
+  </header>
 
-<div id="filters">
-    <label>Occupation:
-        <select id="occupationFilter"></select>
-    </label>
-    <label>Gender:
-        <select id="genderFilter">
-            <option value="All">All</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-        </select>
-    </label>
-    <label>Age Range:
-        <input type="number" id="ageMin" placeholder="Min Age" /> -
-        <input type="number" id="ageMax" placeholder="Max Age" />
-    </label>
-    <label>Stress Level:
-        <input type="number" id="stressMin" placeholder="Min Stress" step="0.1" /> -
-        <input type="number" id="stressMax" placeholder="Max Stress" step="0.1" />
-    </label>
-    <label>Physical Activity (min):
-        <input type="number" id="activityMin" placeholder="Min Activity" /> -
-        <input type="number" id="activityMax" placeholder="Max Activity" />
-    </label>
-    <button id="applyFilters">Apply Filters</button>
-</div>
+  <main>
+    <div class="controls">
+      <label for="personFilter">Select Person ID:</label>
+      <select id="personFilter"></select>
+    </div>
+    <div class="chart-container">
+      <svg id="spiralViz"></svg>
+    </div>
+  </main>
 
-<svg id="spiralViz" width="800" height="800"></svg>
+  <footer>
+    <p>Created by Mingyang Wang | Data Visualization Demo</p>
+  </footer>
 
-<script src="Main.js"></script>
+  <script src="Main.js"></script>
 </body>
 </html>
