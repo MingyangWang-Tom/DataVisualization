@@ -15,8 +15,17 @@
 
   <main>
     <div class="controls">
-      <label for="personFilter">Select Person ID:</label>
-      <select id="personFilter"></select>
+      <div class="control-group">
+        <label for="groupFilter">Group By:</label>
+        <select id="groupFilter"></select>
+      </div>
+      <div class="control-group">
+        <label for="personFilter">Select Person ID:</label>
+        <select id="personFilter"></select>
+      </div>
+      <div class="control-group">
+        <button id="backButton" style="display: none;">Back</button>
+      </div>
     </div>
     
     <div id="personInfo" class="person-info"></div>
@@ -25,6 +34,8 @@
       <svg id="spiralViz"></svg>
     </div>
   </main>
+
+  <div id="tooltip" class="tooltip" style="display: none;"></div>
 
   <footer>
     <p>Created by Mingyang Wang | Data Visualization Demo</p>
